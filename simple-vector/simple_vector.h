@@ -31,35 +31,34 @@ public:
 
     SimpleVector() noexcept = default;
 
-    // Создаёт вектор из size элементов, инициализированных значением по умолчанию
-    explicit SimpleVector(size_t size) {
+    // РЎРѕР·РґР°С‘С‚ РІРµРєС‚РѕСЂ РёР· size СЌР»РµРјРµРЅС‚РѕРІ, РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРЅС‹С… Р·РЅР°С‡РµРЅРёРµРј РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+    explicit SimpleVector(size_t size) :
+        items_(size), size_(size), capacity_(size) {
         ArrayPtr<Type> temp_arr(size);
+
+        //РћС‚СЃСѓС‚СЃС‚РІРёРµ С†РёРєР»Р° РІС‹Р·С‹РІР°РµС‚ РјРЅРѕР¶РµСЃС‚РІРѕ РѕС€РёР±РѕРє С‚РµСЃС‚РѕРІ 12, 16, 17... РІРёРґР° { return item == type_t{}; }) is false,
         for (auto it = temp_arr.Get(); it != temp_arr.Get() + size; ++it) {
             *it = std::move(Type{});
         }
-       // std::fill(temp_arr.Get(), temp_arr.Get() + size, Type{});
+
         temp_arr.swap(items_);
-        size_ = size;
-        capacity_ = size;
+
+        //Р­С‚Рё С„СѓРЅРєС†РёРё РЅРµ СЃРєРѕРјРїРёР»РёСЂСѓСЋС‚СЃСЏ
+        //std::fill(temp_arr.Get(), temp_arr.Get() + size, Type{});
+        //std::fill(this->begin(), this->end(), Type{});
     }
 
-    // Создаёт вектор из size элементов, инициализированных значением value
-    SimpleVector(size_t size, Type value) {
-        ArrayPtr<Type> temp_arr(size);
-        for (auto it = temp_arr.Get(); it != temp_arr.Get() + size; ++it) {
-            *it = std::move(value);
-        }
-        //std::fill(temp_arr.Get(), temp_arr.Get() + size, value);
-        temp_arr.swap(items_);
-        size_ = size;
-        capacity_ = size;
+
+    // РЎРѕР·РґР°С‘С‚ РІРµРєС‚РѕСЂ РёР· size СЌР»РµРјРµРЅС‚РѕРІ, РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРЅС‹С… Р·РЅР°С‡РµРЅРёРµРј value
+    SimpleVector(size_t size, Type value) :
+    items_(size), size_(size), capacity_(size){
+        std::fill(this->begin(), this->end(), value);
     }
 
-    // Создаёт вектор из std::initializer_list
-    SimpleVector(std::initializer_list<Type> init) {
-        ArrayPtr<Type> temp_arr(init.size());
-        std::copy(std::make_move_iterator(init.begin()), std::make_move_iterator(init.end()), temp_arr.Get());
-        temp_arr.swap(items_);
+    // РЎРѕР·РґР°С‘С‚ РІРµРєС‚РѕСЂ РёР· std::initializer_list
+    SimpleVector(std::initializer_list<Type> init) :
+        items_(init.size()) {       
+        std::copy(std::make_move_iterator(init.begin()), std::make_move_iterator(init.end()), this->begin());// temp_arr.Get());
         size_ = init.size();
         capacity_ = init.size();
     }
@@ -79,37 +78,38 @@ public:
     SimpleVector(SimpleVector&& other) {
         items_ = std::move(other.items_);
         size_ = std::exchange(other.size_, 0);
-        capacity_ = size_;
-        other.capacity_ = 0;
+        capacity_ = std::exchange(other.capacity_, 0);
     }
 
-    // Возвращает количество элементов в массиве
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ РІ РјР°СЃСЃРёРІРµ
     size_t GetSize() const noexcept {
         return size_;
     }
 
-    // Возвращает вместимость массива
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РІРјРµСЃС‚РёРјРѕСЃС‚СЊ РјР°СЃСЃРёРІР°
     size_t GetCapacity() const noexcept {
         return capacity_;
     }
 
-    // Сообщает, пустой ли массив
+    // РЎРѕРѕР±С‰Р°РµС‚, РїСѓСЃС‚РѕР№ Р»Рё РјР°СЃСЃРёРІ
     bool IsEmpty() const noexcept {
-        return size_ == 0 ? true : false;
+        return size_ == 0;
     }
 
-    // Возвращает ссылку на элемент с индексом index
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃСЃС‹Р»РєСѓ РЅР° СЌР»РµРјРµРЅС‚ СЃ РёРЅРґРµРєСЃРѕРј index
     Type& operator[](size_t index) noexcept {
+        assert(index < size_);
         return items_[index];
     }
 
-    // Возвращает константную ссылку на элемент с индексом index
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕРЅСЃС‚Р°РЅС‚РЅСѓСЋ СЃСЃС‹Р»РєСѓ РЅР° СЌР»РµРјРµРЅС‚ СЃ РёРЅРґРµРєСЃРѕРј index
     const Type& operator[](size_t index) const noexcept {
+        assert(index < size_);
         return items_[index];
     }
 
-    // Возвращает константную ссылку на элемент с индексом index
-    // Выбрасывает исключение std::out_of_range, если index >= size
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕРЅСЃС‚Р°РЅС‚РЅСѓСЋ СЃСЃС‹Р»РєСѓ РЅР° СЌР»РµРјРµРЅС‚ СЃ РёРЅРґРµРєСЃРѕРј index
+    // Р’С‹Р±СЂР°СЃС‹РІР°РµС‚ РёСЃРєР»СЋС‡РµРЅРёРµ std::out_of_range, РµСЃР»Рё index >= size
     Type& At(size_t index) {
         if (index < size_) {
             return items_[index];
@@ -119,8 +119,8 @@ public:
         }
     }
 
-    // Возвращает константную ссылку на элемент с индексом index
-    // Выбрасывает исключение std::out_of_range, если index >= size
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕРЅСЃС‚Р°РЅС‚РЅСѓСЋ СЃСЃС‹Р»РєСѓ РЅР° СЌР»РµРјРµРЅС‚ СЃ РёРЅРґРµРєСЃРѕРј index
+    // Р’С‹Р±СЂР°СЃС‹РІР°РµС‚ РёСЃРєР»СЋС‡РµРЅРёРµ std::out_of_range, РµСЃР»Рё index >= size
     const Type& At(size_t index) const {
         if (index < size_) {
             return items_[index];
@@ -130,13 +130,13 @@ public:
         }
     }
 
-    // Обнуляет размер массива, не изменяя его вместимость
+    // РћР±РЅСѓР»СЏРµС‚ СЂР°Р·РјРµСЂ РјР°СЃСЃРёРІР°, РЅРµ РёР·РјРµРЅСЏСЏ РµРіРѕ РІРјРµСЃС‚РёРјРѕСЃС‚СЊ
     void Clear() noexcept {
         size_ = 0;
     }
 
-    // Изменяет размер массива.
-    // При увеличении размера новые элементы получают значение по умолчанию для типа Type
+    // РР·РјРµРЅСЏРµС‚ СЂР°Р·РјРµСЂ РјР°СЃСЃРёРІР°.
+    // РџСЂРё СѓРІРµР»РёС‡РµРЅРёРё СЂР°Р·РјРµСЂР° РЅРѕРІС‹Рµ СЌР»РµРјРµРЅС‚С‹ РїРѕР»СѓС‡Р°СЋС‚ Р·РЅР°С‡РµРЅРёРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґР»СЏ С‚РёРїР° Type
     void Resize(size_t new_size) {
         if (new_size <= capacity_) {
             if (new_size <= size_) {
@@ -166,38 +166,38 @@ public:
             capacity_ = new_capacity;
         }
     }
-    // Возвращает итератор на начало массива
-    // Для пустого массива может быть равен (или не равен) nullptr
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РёС‚РµСЂР°С‚РѕСЂ РЅР° РЅР°С‡Р°Р»Рѕ РјР°СЃСЃРёРІР°
+    // Р”Р»СЏ РїСѓСЃС‚РѕРіРѕ РјР°СЃСЃРёРІР° РјРѕР¶РµС‚ Р±С‹С‚СЊ СЂР°РІРµРЅ (РёР»Рё РЅРµ СЂР°РІРµРЅ) nullptr
     Iterator begin() noexcept {
         return items_.Get();
     }
 
-    // Возвращает итератор на элемент, следующий за последним
-    // Для пустого массива может быть равен (или не равен) nullptr
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РёС‚РµСЂР°С‚РѕСЂ РЅР° СЌР»РµРјРµРЅС‚, СЃР»РµРґСѓСЋС‰РёР№ Р·Р° РїРѕСЃР»РµРґРЅРёРј
+    // Р”Р»СЏ РїСѓСЃС‚РѕРіРѕ РјР°СЃСЃРёРІР° РјРѕР¶РµС‚ Р±С‹С‚СЊ СЂР°РІРµРЅ (РёР»Рё РЅРµ СЂР°РІРµРЅ) nullptr
     Iterator end() noexcept {
         return items_.Get() + size_;
     }
 
-    // Возвращает константный итератор на начало массива
-    // Для пустого массива может быть равен (или не равен) nullptr
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕРЅСЃС‚Р°РЅС‚РЅС‹Р№ РёС‚РµСЂР°С‚РѕСЂ РЅР° РЅР°С‡Р°Р»Рѕ РјР°СЃСЃРёРІР°
+    // Р”Р»СЏ РїСѓСЃС‚РѕРіРѕ РјР°СЃСЃРёРІР° РјРѕР¶РµС‚ Р±С‹С‚СЊ СЂР°РІРµРЅ (РёР»Рё РЅРµ СЂР°РІРµРЅ) nullptr
     ConstIterator begin() const noexcept {
         return items_.Get();
     }
 
-    // Возвращает итератор на элемент, следующий за последним
-    // Для пустого массива может быть равен (или не равен) nullptr
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РёС‚РµСЂР°С‚РѕСЂ РЅР° СЌР»РµРјРµРЅС‚, СЃР»РµРґСѓСЋС‰РёР№ Р·Р° РїРѕСЃР»РµРґРЅРёРј
+    // Р”Р»СЏ РїСѓСЃС‚РѕРіРѕ РјР°СЃСЃРёРІР° РјРѕР¶РµС‚ Р±С‹С‚СЊ СЂР°РІРµРЅ (РёР»Рё РЅРµ СЂР°РІРµРЅ) nullptr
     ConstIterator end() const noexcept {
         return items_.Get() + size_;
     }
 
-    // Возвращает константный итератор на начало массива
-    // Для пустого массива может быть равен (или не равен) nullptr
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РєРѕРЅСЃС‚Р°РЅС‚РЅС‹Р№ РёС‚РµСЂР°С‚РѕСЂ РЅР° РЅР°С‡Р°Р»Рѕ РјР°СЃСЃРёРІР°
+    // Р”Р»СЏ РїСѓСЃС‚РѕРіРѕ РјР°СЃСЃРёРІР° РјРѕР¶РµС‚ Р±С‹С‚СЊ СЂР°РІРµРЅ (РёР»Рё РЅРµ СЂР°РІРµРЅ) nullptr
     ConstIterator cbegin() const noexcept {
         return items_.Get();
     }
 
-    // Возвращает итератор на элемент, следующий за последним
-    // Для пустого массива может быть равен (или не равен) nullptr
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РёС‚РµСЂР°С‚РѕСЂ РЅР° СЌР»РµРјРµРЅС‚, СЃР»РµРґСѓСЋС‰РёР№ Р·Р° РїРѕСЃР»РµРґРЅРёРј
+    // Р”Р»СЏ РїСѓСЃС‚РѕРіРѕ РјР°СЃСЃРёРІР° РјРѕР¶РµС‚ Р±С‹С‚СЊ СЂР°РІРµРЅ (РёР»Рё РЅРµ СЂР°РІРµРЅ) nullptr
     ConstIterator cend() const noexcept {
         return items_.Get() + size_;
     }
@@ -212,8 +212,8 @@ public:
         return *this;
     }
 
-    // Добавляет элемент в конец вектора
-    // При нехватке места увеличивает вдвое вместимость вектора
+    // Р”РѕР±Р°РІР»СЏРµС‚ СЌР»РµРјРµРЅС‚ РІ РєРѕРЅРµС† РІРµРєС‚РѕСЂР°
+    // РџСЂРё РЅРµС…РІР°С‚РєРµ РјРµСЃС‚Р° СѓРІРµР»РёС‡РёРІР°РµС‚ РІРґРІРѕРµ РІРјРµСЃС‚РёРјРѕСЃС‚СЊ РІРµРєС‚РѕСЂР°
     void PushBack(Type item) {
         if (capacity_ == size_) {
             size_t old_size = size_;
@@ -224,11 +224,12 @@ public:
         ++size_;
     }
 
-    // Вставляет значение value в позицию pos.
-    // Возвращает итератор на вставленное значение
-    // Если перед вставкой значения вектор был заполнен полностью,
-    // вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
+    // Р’СЃС‚Р°РІР»СЏРµС‚ Р·РЅР°С‡РµРЅРёРµ value РІ РїРѕР·РёС†РёСЋ pos.
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РёС‚РµСЂР°С‚РѕСЂ РЅР° РІСЃС‚Р°РІР»РµРЅРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ
+    // Р•СЃР»Рё РїРµСЂРµРґ РІСЃС‚Р°РІРєРѕР№ Р·РЅР°С‡РµРЅРёСЏ РІРµРєС‚РѕСЂ Р±С‹Р» Р·Р°РїРѕР»РЅРµРЅ РїРѕР»РЅРѕСЃС‚СЊСЋ,
+    // РІРјРµСЃС‚РёРјРѕСЃС‚СЊ РІРµРєС‚РѕСЂР° РґРѕР»Р¶РЅР° СѓРІРµР»РёС‡РёС‚СЊСЃСЏ РІРґРІРѕРµ, Р° РґР»СЏ РІРµРєС‚РѕСЂР° РІРјРµСЃС‚РёРјРѕСЃС‚СЊСЋ 0 СЃС‚Р°С‚СЊ СЂР°РІРЅРѕР№ 1
     Iterator Insert(ConstIterator pos, Type value) {
+        assert(this->begin() <= pos && this->end() >= pos);
         Iterator it = const_cast<Iterator>(pos);
         if (capacity_ == size_) {
             size_t n;
@@ -251,12 +252,12 @@ public:
         }
     }
 
-    // "Удаляет" последний элемент вектора. Вектор не должен быть пустым
+    // "РЈРґР°Р»СЏРµС‚" РїРѕСЃР»РµРґРЅРёР№ СЌР»РµРјРµРЅС‚ РІРµРєС‚РѕСЂР°. Р’РµРєС‚РѕСЂ РЅРµ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїСѓСЃС‚С‹Рј
     void PopBack() noexcept {
         --size_;
     }
 
-    // Удаляет элемент вектора в указанной позиции
+    // РЈРґР°Р»СЏРµС‚ СЌР»РµРјРµРЅС‚ РІРµРєС‚РѕСЂР° РІ СѓРєР°Р·Р°РЅРЅРѕР№ РїРѕР·РёС†РёРё
     Iterator Erase(ConstIterator pos) {
         Iterator it = const_cast<Iterator>(pos);
         std::copy(std::make_move_iterator(it + 1), std::make_move_iterator(this->end()), it);
@@ -264,7 +265,7 @@ public:
         return it;
     }
 
-    // Обменивает значение с другим вектором
+    // РћР±РјРµРЅРёРІР°РµС‚ Р·РЅР°С‡РµРЅРёРµ СЃ РґСЂСѓРіРёРј РІРµРєС‚РѕСЂРѕРј
     void swap(SimpleVector& other) noexcept {
         items_.swap(other.items_);
         std::swap(size_, other.size_);
@@ -281,8 +282,8 @@ private:
 
 template <typename Type>
 inline bool operator==(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-    return std::equal(lhs.begin(), lhs.end(), rhs.begin())
-        && lhs.GetSize() == rhs.GetSize();
+    return lhs.GetSize() == rhs.GetSize() &&
+        std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 template <typename Type>
@@ -297,12 +298,12 @@ inline bool operator<(const SimpleVector<Type>& lhs, const SimpleVector<Type>& r
 
 template <typename Type>
 inline bool operator<=(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-    return (lhs < rhs || lhs == rhs);
+    return !(rhs < lhs);
 }
 
 template <typename Type>
 inline bool operator>(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-    return !(lhs <= rhs);
+    return (rhs < lhs);
 }
 
 template <typename Type>
